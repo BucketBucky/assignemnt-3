@@ -1,28 +1,46 @@
 package bgu.spl.net.impl.stomp;
 
-import bgu.spl.net.impl.echo.EchoProtocol;
-import bgu.spl.net.impl.echo.LineMessageEncoderDecoder;
+import java.util.function.Supplier;
+
+import bgu.spl.net.api.MessageEncoderDecoder;
+import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.srv.Server;
 
 public class StompServer {
 
     public static void main(String[] args) {
-        // TODO: implement this
-        // בודקים אם קיבלנו פורט, אחרת משתמשים ב-7777 כברירת מחדל
-        int port = 7777;
-        if (args.length > 0) {
-            port = Integer.parseInt(args[0]);
+        if (args.length < 2) {
+            System.out.println("There aren't enough args to condact a proper server");
+            System.exit(1); 
         }
 
-        System.out.println("Starting server on port " + port);
+        int port = 7777;
+         try {
+            port = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid port number: " + args[0]);
+            System.exit(1);
+        }
 
-        // שימוש זמני ב-EchoProtocol ו-LineMessageEncoderDecoder
-        // רק כדי שנוכל לבדוק את החיבור של הקליינט שלנו.
-        // בהמשך נחליף את זה ל-StompProtocol ו-StompEncoderDecoder
-        Server.threadPerClient(
-                port,
-                () -> new EchoProtocol(), // יצירת פרוטוקול לכל לקוח
-                () -> new LineMessageEncoderDecoder() // יצירת מפענח לכל לקוח
-        ).serve();
+        String srv_type = args[1];
+        if (srv_type.equals("TPC") || srv_type.equals("tpc")) {
+            System.out.println("Starting TPC server on port: " + port);
+            Supplier<MessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
+            Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
+            Server.threadPerClient(port, new_SMP, new_SED).serve();
+        }
+
+        else if (srv_type.equals("REACTOR") || srv_type.equals("reactor") || srv_type.equals("Reactor")) {
+            System.out.println("Starting Reactor server on port: " + port);
+            Supplier<MessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
+            Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
+            //Runtime.getRuntime().availableProcessors() checks the available Threads
+            Server.reactor( Runtime.getRuntime().availableProcessors(),port, new_SMP, new_SED).serve();
+        }
+
+        else {
+            System.out.println("Unknown server type: " + srv_type + ", please try again with TPC/Reactor");
+            System.exit(1);
+        }
     }
 }

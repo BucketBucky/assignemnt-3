@@ -1,10 +1,15 @@
 package bgu.spl.net.srv;
 
+//added these 2 imports
+import bgu.spl.net.api.StompMessagingProtocol;
+import bgu.spl.net.srv.ConnectionsIMPL;
+
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public abstract class BaseServer<T> implements Server<T> {
@@ -13,6 +18,10 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<MessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
     private ServerSocket sock;
+
+    //added 2 fields like in Reactor
+    private final ConnectionsIMPL<T> connections = new ConnectionsIMPL<>();
+    private final AtomicInteger connectionIdCounter = new AtomicInteger(0);
 
     public BaseServer(
             int port,
@@ -23,6 +32,9 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
 		this.sock = null;
+        
+        
+
     }
 
     @Override
@@ -37,11 +49,17 @@ public abstract class BaseServer<T> implements Server<T> {
 
                 Socket clientSock = serverSock.accept();
 
+                //added these 2 lines to ensure a proper stomp protocol cast and use
+                MessagingProtocol<T> protocol = protocolFactory.get();
+                StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
+
+                int connectionId = connectionIdCounter.getAndIncrement();
+
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
                         clientSock,
                         encdecFactory.get(),
-                        protocolFactory.get());
-
+                        stompProtocol, connectionId, connections);
+                connections.connect(connectionId, handler);
                 execute(handler);
             }
         } catch (IOException ex) {
