@@ -1,0 +1,39 @@
+{
+    "team a": "Germany",
+    "team b": "Japan",
+    "events": [
+        {
+            "event name": "Goal",
+            "time": 10,
+            "general game updates": {
+                "active": "true",
+                "before halftime": "true"
+            },
+            "team a updates": {
+                "goals": "1",
+                "possession": "40%"
+            },
+            "team b updates": {
+                "goals": "0",
+                "possession": "60%"
+            },
+            "description": "Amazing goal by Germany!"
+        },
+        {
+            "event name": "Yellow Card",
+            "time": 30,
+            "general game updates": {
+                "active": "true",
+                "before halftime": "true"
+            },
+            "team a updates": {
+                "goals": "1",
+                "yellow cards": "1"
+            },
+            "team b updates": {
+                "goals": "0"
+            },
+            "description": "Germany player fouls."
+        }
+    ]
+}

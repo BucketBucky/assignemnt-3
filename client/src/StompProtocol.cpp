@@ -4,6 +4,11 @@
 #include "../include/event.h"
 #include <fstream>
 
+//helper function to sort events by time
+bool compareEventsByTime(const Event& a, const Event& b) {
+    return a.get_time() < b.get_time();
+}
+
 StompProtocol::StompProtocol() : numOfSubs(0), numOfReciptes(0), activeSubs(), logoutReceiptId(-1) {}
 
 std::vector<std::string> StompProtocol::process(std::string userLine)
@@ -20,6 +25,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         std::string hostPort;
         std::string username;
         std::string password;
+        
         if (!(keyboardInputstream >> hostPort >> username >> password))
         { // we check if one of the 3 arguments needed for a proper login is missing
             std::cout << "hostport username or password is missing" << std::endl;
@@ -98,6 +104,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         std::string frame = "DISCONNECT\n";
         frame = frame + "receipt:" + std::to_string(myRecipt) + "\n";
         frame = frame + "\n";
+        whosent = "";
         multiFrames.push_back(frame);
         return multiFrames;
     }
@@ -320,12 +327,16 @@ void StompProtocol::processAnswer(std::string serverResponse)
         event.setUserSender(user);
         AllGamesInfo[gameName].events.push_back(event);
         
-        for (auto  &[key, val] : general_updates) //update old information
-            AllGamesInfo[gameName].general_stats[key] = val;
-        for (auto  &[key, val] : a_updates)
-            AllGamesInfo[gameName].team_a_stats[key] = val;
-        for (auto  &[key, val] : b_updates)
-            AllGamesInfo[gameName].team_b_stats[key] = val;
+        //update all the current info
+       for (auto &pair : general_updates) {
+            AllGamesInfo[gameName].general_stats[pair.first] = pair.second;
+        }
+        for (auto &pair : a_updates) {
+            AllGamesInfo[gameName].team_a_stats[pair.first] = pair.second;
+        }
+        for (auto &pair : b_updates) {
+            AllGamesInfo[gameName].team_b_stats[pair.first] = pair.second;
+        }
     }
 
     else if (command == "CONNECTED")
@@ -363,7 +374,3 @@ void StompProtocol::processAnswer(std::string serverResponse)
 
     
 
-//helper function to sort events by time
-bool compareEventsByTime(const Event& a, const Event& b) {
-    return a.get_time() < b.get_time();
-}

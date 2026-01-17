@@ -2,6 +2,7 @@
 
 #include "../include/ConnectionHandler.h"
 #include "../include/event.h"
+#include <algorithm>
 
 // TODO: implement the STOMP protocol
 

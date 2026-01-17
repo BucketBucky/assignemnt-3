@@ -1,0 +1,37 @@
+{
+    "team a": "Germany",
+    "team b": "Japan",
+    "events": [
+        {
+            "event name": "Offside",
+            "time": 20,
+            "general game updates": {
+                "active": "true"
+            },
+            "team a updates": {
+                "goals": "1"
+            },
+            "team b updates": {
+                "goals": "0",
+                "offsides": "1"
+            },
+            "description": "Japan caught offside."
+        },
+        {
+            "event name": "Goal",
+            "time": 80,
+            "general game updates": {
+                "active": "true",
+                "before halftime": "false"
+            },
+            "team a updates": {
+                "goals": "1"
+            },
+            "team b updates": {
+                "goals": "1",
+                "possession": "55%"
+            },
+            "description": "Japan equalizes!"
+        }
+    ]
+}
