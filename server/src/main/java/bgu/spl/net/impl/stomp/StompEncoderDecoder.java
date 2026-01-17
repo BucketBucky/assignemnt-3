@@ -1,4 +1,4 @@
-package main.java.bgu.spl.net.impl.stomp;
+package bgu.spl.net.impl.stomp;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 
@@ -18,7 +18,7 @@ public class StompEncoderDecoder implements MessageEncoderDecoder<String> {
 
     @Override
     public byte[] encode(String message) {
-        return (message + NULL_CHAR).getBytes();
+        return (message + "\u0000").getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private String popString() {

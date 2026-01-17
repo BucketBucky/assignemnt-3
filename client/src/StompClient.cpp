@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
         std::string answer;
         if (!connectionHandler.getFrameAscii(answer, '\0'))
         {
+           
             std::cout << "Disconnected (Error receiving)!" << std::endl;
             break;
         }

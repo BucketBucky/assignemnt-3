@@ -1,4 +1,4 @@
-package main.java.bgu.spl.net.srv;
+package bgu.spl.net.srv;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
@@ -17,8 +17,11 @@ public class ConnectionsIMPL<T> implements Connections<T> {
     public boolean send(int connectionId, T msg) {
         ConnectionHandler<T> curr_Handler = ch_map.get(connectionId);
         if (curr_Handler != null) {
+
+            System.out.println("DEBUG: ConnectionsIMPL found handler for ID " + connectionId + ". Sending..."); // <--- הוסף
+            
             curr_Handler.send(msg);
-            return true;
+            return true;    
         }
         return false;
     }

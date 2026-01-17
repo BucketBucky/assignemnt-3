@@ -1,4 +1,4 @@
-package main.java.bgu.spl.net.impl.stomp;
+package bgu.spl.net.impl.stomp;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,11 +28,20 @@ public class StompMessagingProtocolIMPL implements StompMessagingProtocol<String
     
     @Override
     //changed to return String because of the interface change (extended MessagingProtocol that has T process(T message)
-    public String process(String message){
+    public void process(String message){
+        //Debuging msgs
+        System.out.println("DEBUG: server received msg ->\n" + message);
+        System.out.println("\nDEBUG: end of msg");
+        //end of DEBUG
         String[] lines = ((String) message).split("\n");
-        String FrameCommand = lines[0];
+        String FrameCommand = lines[0].trim();
+
+        //Debuging msgs
+        System.out.println("DEBUG: server received frame ->\n" + FrameCommand);
+        System.out.println("\nDEBUG: end of frame");
+        //end of DEBUG
+
         this.check_frame(FrameCommand, lines, message);
-        return null;
     }
 
 	/**
@@ -100,18 +109,31 @@ public class StompMessagingProtocolIMPL implements StompMessagingProtocol<String
     Handler functions for each Frame
     */
     private void h_connect(String lines[]) {
+
+        //1
+        System.out.println("DEBUG: Entering h_connect..."); //-----1
+
         //first, let's clean all the inputs.
         String login = get_header(lines, "login");
         String passcode = get_header(lines, "passcode");
         if (login == null || passcode == null) {
+
+            //2
+            System.out.println("DEBUG: Missing login or passcode!"); // <--- 2
+
             this.send_error("Login or passcode header is missing, please try again");
             return;
         }
         //Now let's check if the user is allready logged in.
 
 
+        //3
+        System.out.println("DEBUG: Login: " + login + ", Passcode: " + passcode); // <--- 3
+
+
         //potential need for sychronized block here.
         if (loggedInUsers.contains(login)) {
+            System.out.println("DEBUG: User already logged in!"); // <--- 4
             this.send_error("User is allready logged in, please enter a different username");
             return;
         }
@@ -131,7 +153,12 @@ public class StompMessagingProtocolIMPL implements StompMessagingProtocol<String
         currentUsername = login;
         loggedInUsers.add(login);
         String response = "CONNECTED\n" + "version:1.2\n\n";
+
+        System.out.println("DEBUG: Sending CONNECTED to ID: " + this.connectionId); // <--- 5
+
         connections.send(this.connectionId, response);
+
+        System.out.println("DEBUG: Send success? "); // <--- 6
     } 
     
     

@@ -3,7 +3,8 @@ package bgu.spl.net.impl.stomp;
 import java.util.function.Supplier;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
+import bgu.spl.net.api.StompMessagingProtocol; 
+
 import bgu.spl.net.srv.Server;
 
 public class StompServer {
@@ -15,7 +16,7 @@ public class StompServer {
         }
 
         int port = 7777;
-         try {
+        try {
             port = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
             System.out.println("Invalid port number: " + args[0]);
@@ -23,19 +24,17 @@ public class StompServer {
         }
 
         String srv_type = args[1];
-        if (srv_type.equals("TPC") || srv_type.equals("tpc")) {
+        Supplier<StompMessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
+        Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
+
+        if (srv_type.equalsIgnoreCase("tpc")) {
             System.out.println("Starting TPC server on port: " + port);
-            Supplier<MessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
-            Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
             Server.threadPerClient(port, new_SMP, new_SED).serve();
         }
 
-        else if (srv_type.equals("REACTOR") || srv_type.equals("reactor") || srv_type.equals("Reactor")) {
+        else if (srv_type.equalsIgnoreCase("reactor")) {
             System.out.println("Starting Reactor server on port: " + port);
-            Supplier<MessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
-            Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
-            //Runtime.getRuntime().availableProcessors() checks the available Threads
-            Server.reactor( Runtime.getRuntime().availableProcessors(),port, new_SMP, new_SED).serve();
+            Server.reactor(Runtime.getRuntime().availableProcessors(), port, new_SMP, new_SED).serve();
         }
 
         else {

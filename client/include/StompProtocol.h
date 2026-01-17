@@ -27,6 +27,7 @@ int numOfReciptes;
 std::mutex lock; //we need a lock to synchrtinize the 2 threads working in the stompclient.cpp 
 std::string whosent; 
 std::map<std::string, GameMemory> AllGamesInfo; //a map which maps games to their information startcture above
+int logoutReceiptId;
 public:
 StompProtocol();
 
