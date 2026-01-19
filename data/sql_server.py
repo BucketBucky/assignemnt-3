@@ -7,7 +7,7 @@ DO NOT CHANGE the server name or the basic protocol.
 Students should EXTEND this server by implementing
 the methods below.
 """
-
+import sqlite3
 import socket
 import sys
 import threading
@@ -15,6 +15,8 @@ import threading
 
 SERVER_NAME = "STOMP_PYTHON_SQL_SERVER"  # DO NOT CHANGE!
 DB_FILE = "stomp_server.db"              # DO NOT CHANGE!
+
+
 
 
 def recv_null_terminated(sock: socket.socket) -> str:
@@ -29,16 +31,49 @@ def recv_null_terminated(sock: socket.socket) -> str:
             return msg.decode("utf-8", errors="replace")
 
 
-def init_database():
-    pass
+def init_database(): #we create tables to save the data we want from the server (login times, lougout times, file tracking etc.. )
+    dbcon = sqlite3.connect(DB_FILE)
+    with dbcon:
+        cursor=dbcon.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users 
+                 (username TEXT PRIMARY KEY, password TEXT, registration_date TEXT)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS login_history 
+                 (username TEXT, login_time TEXT, logout_time TEXT)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS file_tracking 
+                 (username TEXT, filename TEXT, upload_time TEXT, game_channel TEXT)''')
+        print(f"[{SERVER_NAME}] Database initialized successfully.")
+        dbcon.commit()
+    dbcon.close()
+    
 
 
-def execute_sql_command(sql_command: str) -> str:
+def execute_sql_command(sql_command: str) -> str: #this function apllies changes to the tables we have initialized. (commands like INSERT)
+    dbcon = sqlite3.connect(DB_FILE)
+    with dbcon:
+        cursor=dbcon.cursor()
+        cursor.execute(sql_command)
+        dbcon.commit()
+    dbcon.close()
+
     return "done"
 
 
-def execute_sql_query(sql_query: str) -> str:
-    return "done"
+def execute_sql_query(sql_query: str) -> str: #this function reads data from the tables (select) 
+    dbcon = sqlite3.connect(DB_FILE)
+    with dbcon:
+        cursor=dbcon.cursor()
+        cursor.execute(sql_query)
+        infoData = cursor.fetchall() #to suck all the data from the selected table
+        if not infoData:
+            return ""
+        infoList = []
+        for info in infoData:
+            infoString = ", ".join(str(item) for item in info)
+            infoList.append(infoString)
+    
+    dbcon.close()
+
+    return "SUCCESS|" + "|".join(infoList)
 
 
 def handle_client(client_socket: socket.socket, addr):
@@ -50,10 +85,19 @@ def handle_client(client_socket: socket.socket, addr):
             if message == "":
                 break
 
-            print(f"[{SERVER_NAME}] Received:")
-            print(message)
+            message_clean = message.strip()
+            response = ""
 
-            client_socket.sendall(b"done\0")
+
+            print(f"[{SERVER_NAME}] Received: {message}") # הדפסה ללוג
+            # בדיקה האם זו שאילתת SELECT או פקודה אחרת
+            if message_clean.upper().startswith("SELECT"):
+                response = execute_sql_query(message_clean)
+            else:
+                response = execute_sql_command(message_clean)
+            
+            # שליחת התשובה חזרה ל-Java עם Null Terminator
+            client_socket.sendall((response + "\0").encode("utf-8"))
 
     except Exception as e:
         print(f"[{SERVER_NAME}] Error handling client {addr}: {e}")
@@ -95,6 +139,7 @@ def start_server(host="127.0.0.1", port=7778):
 
 if __name__ == "__main__":
     port = 7778
+    init_database() #create the tables 
     if len(sys.argv) > 1:
         raw_port = sys.argv[1].strip()
         try:

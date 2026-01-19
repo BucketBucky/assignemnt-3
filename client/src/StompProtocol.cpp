@@ -141,6 +141,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         {
             std::string frame = "SEND\n";
             frame = frame + "destination:/" + gameName + "\n";
+            frame = frame + "file: " + jsonFile + "\n"; //we add this for the SQL so the server will get the name of the json file 
             frame = frame + "\n";
             frame = frame + "user: " + whosent + "\n";
             frame = frame + "team a: " + data.team_a_name + "\n";

@@ -1,0 +1,1 @@
+{"team a": "TestA", "team b": "TestB", "events": [{"event name": "Goal", "time": 10, "general game updates": {"active": "true"}, "team a updates": {"goals": "1"}, "team b updates": {"goals": "0"}, "description": "Goal for A"}]}

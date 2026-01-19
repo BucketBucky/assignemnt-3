@@ -70,6 +70,20 @@ public class Database {
 		if (connectionsIdMap.containsKey(connectionId)) {
 			return LoginStatus.CLIENT_ALREADY_CONNECTED;
 		}
+		//we check if the user is saved in the data class hash map 
+        if (!userMap.containsKey(username)) {
+            String sql = "SELECT password FROM users WHERE username='" + escapeSql(username) + "'"; 
+            String result = executeSQL(sql); //we send a legal SQL query
+            if (result.startsWith("SUCCESS")) {
+                String[] parts = result.split("\\|");
+                if (parts.length > 1) {
+                    String dbPassword = parts[1].trim();
+                    // we load the user data from the SQL server into the data map
+                    User user = new User(connectionId, username, dbPassword);
+                    userMap.put(username, user);
+                }
+            }
+        }
 		if (addNewUserCase(connectionId, username, password)) {
 			// Log new user registration in SQL
 			String sql = String.format(

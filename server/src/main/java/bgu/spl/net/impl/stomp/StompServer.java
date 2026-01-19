@@ -27,6 +27,8 @@ public class StompServer {
         Supplier<StompMessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
         Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
 
+        
+
         if (srv_type.equalsIgnoreCase("tpc")) {
             System.out.println("Starting TPC server on port: " + port);
             Server.threadPerClient(port, new_SMP, new_SED).serve();
