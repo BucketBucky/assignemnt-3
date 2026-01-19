@@ -89,14 +89,13 @@ def handle_client(client_socket: socket.socket, addr):
             response = ""
 
 
-            print(f"[{SERVER_NAME}] Received: {message}") # הדפסה ללוג
-            # בדיקה האם זו שאילתת SELECT או פקודה אחרת
+            print(f"[{SERVER_NAME}] Received: {message}") 
+            #we check the type of the command
             if message_clean.upper().startswith("SELECT"):
                 response = execute_sql_query(message_clean)
             else:
                 response = execute_sql_command(message_clean)
-            
-            # שליחת התשובה חזרה ל-Java עם Null Terminator
+            # we send a null char to close
             client_socket.sendall((response + "\0").encode("utf-8"))
 
     except Exception as e:

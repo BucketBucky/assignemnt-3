@@ -18,7 +18,7 @@ public class ConnectionsIMPL<T> implements Connections<T> {
         ConnectionHandler<T> curr_Handler = ch_map.get(connectionId);
         if (curr_Handler != null) {
 
-            System.out.println("DEBUG: ConnectionsIMPL found handler for ID " + connectionId + ". Sending..."); // <--- הוסף
+           
             
             curr_Handler.send(msg);
             return true;    

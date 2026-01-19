@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         std::thread mySocketThread([&myHandler, &myProtocol, &connectedToServer]() {
             std::string ans;
             while (connectedToServer && myHandler.getFrameAscii(ans, '\0')) {
-                myProtocol.processAnswer(ans); // הפרוטוקול מטפל בלוגיקה ובהדפסות
+                myProtocol.processAnswer(ans); 
             }
             connectedToServer = false;
             std::cout << "disconnected from server" << std::endl;

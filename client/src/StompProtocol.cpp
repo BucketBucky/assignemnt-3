@@ -167,7 +167,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
             frame = frame + "description:\n" + event.get_discription() + "\n";
             multiFrames.push_back(frame);
         }
-        std::cout << "Generated " << multiFrames.size() << " frames from report." << std::endl;
+        
         return multiFrames;
     }
 
@@ -230,7 +230,6 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
             summaryFile << event.get_discription() << "\n\n\n\n"; //for a big gap between events
         }
         summaryFile.close();
-        std::cout << "suammary finished"<< std::endl;
         return multiFrames;
     }
 
