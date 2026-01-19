@@ -374,4 +374,3 @@ void StompProtocol::processAnswer(std::string serverResponse)
 
 
     
-
