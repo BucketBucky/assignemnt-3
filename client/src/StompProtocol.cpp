@@ -4,12 +4,17 @@
 #include "../include/event.h"
 #include <fstream>
 
-//helper function to sort events by time
-bool compareEventsByTime(const Event& a, const Event& b) {
+// helper function to sort events by time
+bool compareEventsByTime(const Event &a, const Event &b)
+{
     return a.get_time() < b.get_time();
 }
 
-StompProtocol::StompProtocol() : numOfSubs(0), numOfReciptes(0), activeSubs(), logoutReceiptId(-1) {}
+StompProtocol::StompProtocol() : numOfSubs(0), numOfReciptes(0), activeSubs(),  receiptActions(), terminate(false) {}
+
+bool StompProtocol::logoutTrue() {
+    return terminate;
+}
 
 std::vector<std::string> StompProtocol::process(std::string userLine)
 {
@@ -25,7 +30,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         std::string hostPort;
         std::string username;
         std::string password;
-        
+
         if (!(keyboardInputstream >> hostPort >> username >> password))
         { // we check if one of the 3 arguments needed for a proper login is missing
             std::cout << "hostport username or password is missing" << std::endl;
@@ -60,6 +65,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         int id = numOfSubs;
         numOfReciptes = numOfReciptes + 1;
         int myrecipt = numOfReciptes;
+        receiptActions[myrecipt] = "joined " + gameName; //we map the id to this string, the same methods works in the commmands below
         activeSubs[gameName] = id;
         std::string frame = "SUBSCRIBE\n";
         frame = frame + "destination:/" + gameName + "\n";
@@ -88,9 +94,12 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
 
         int id = subPointer->second; // each pointer in the map is has its key and value. the value is the id so we are getting the second parameter
         activeSubs.erase(subPointer);
+        numOfReciptes = numOfReciptes + 1;
+        int myReceipt = numOfReciptes;
+        receiptActions[myReceipt] = "exited " + gameName;
         std::string frame = "UNSUBSCRIBE\n";
         frame = frame + "id:" + std::to_string(id) + "\n";
-        frame = frame + "receipt:" + std::to_string(id) + "\n";
+        frame = frame + "receipt:" + std::to_string(myReceipt) + "\n";
         frame = frame + "\n";
         multiFrames.push_back(frame);
         return multiFrames;
@@ -100,7 +109,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
     {
         numOfReciptes = numOfReciptes + 1; // logout requires reciptes as well
         int myRecipt = numOfReciptes;
-        logoutReceiptId = myRecipt; // since we need to remove ourself from all the channels and erase our reports we need to save this id as a lougout id to handle that later on
+        receiptActions[myRecipt] = "logout";
         std::string frame = "DISCONNECT\n";
         frame = frame + "receipt:" + std::to_string(myRecipt) + "\n";
         frame = frame + "\n";
@@ -141,7 +150,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         {
             std::string frame = "SEND\n";
             frame = frame + "destination:/" + gameName + "\n";
-            frame = frame + "file: " + jsonFile + "\n"; //we add this for the SQL so the server will get the name of the json file 
+            frame = frame + "file: " + jsonFile + "\n"; // we add this for the SQL so the server will get the name of the json file
             frame = frame + "\n";
             frame = frame + "user: " + whosent + "\n";
             frame = frame + "team a: " + data.team_a_name + "\n";
@@ -167,20 +176,21 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
             frame = frame + "description:\n" + event.get_discription() + "\n";
             multiFrames.push_back(frame);
         }
-        
+
         return multiFrames;
     }
 
-    if (command == "summary"){
+    if (command == "summary")
+    {
         std::string gameName, user, file;
-        // we check if we get the 3 argumentes required for a summary command 
+        // we check if we get the 3 argumentes required for a summary command
         if (!(keyboardInputstream >> gameName >> user >> file))
         {
             std::cout << "one of the 3 arguments is missing" << std::endl;
             return multiFrames;
         }
 
-        if (AllGamesInfo.find(gameName) == AllGamesInfo.end()) //we check if there is any info on the gmae. only then we can perform a proper summary
+        if (AllGamesInfo.find(gameName) == AllGamesInfo.end()) // we check if there is any info on the gmae. only then we can perform a proper summary
         {
             std::cout << "Error: no info exitrs " << std::endl;
             return multiFrames;
@@ -193,41 +203,44 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
             return multiFrames;
         }
         // now we write all the info statistics into the file we have opend
-         summaryFile << game.team_a << " vs " << game.team_b << "\n";
-         summaryFile << "Game stats:\n";
- 
-         summaryFile << "General stats:\n";
-         for (auto &pair : game.general_stats)
-         {
-             summaryFile << pair.first << ": " << pair.second << "\n";
-         }
- 
-         summaryFile << game.team_a << " stats:\n";
-         for (auto &pair : game.team_a_stats)
-         {
-             summaryFile << pair.first << ": " << pair.second << "\n";
-         }
- 
-         summaryFile << game.team_b << " stats:\n";
-         for (auto &pair : game.team_b_stats)
-         {
-             summaryFile << pair.first << ": " << pair.second << "\n";
-         }
+        summaryFile << game.team_a << " vs " << game.team_b << "\n";
+        summaryFile << "Game stats:\n";
+
+        summaryFile << "General stats:\n";
+        for (auto &pair : game.general_stats)
+        {
+            summaryFile << pair.first << ": " << pair.second << "\n";
+        }
+
+        summaryFile << game.team_a << " stats:\n";
+        for (auto &pair : game.team_a_stats)
+        {
+            summaryFile << pair.first << ": " << pair.second << "\n";
+        }
+
+        summaryFile << game.team_b << " stats:\n";
+        for (auto &pair : game.team_b_stats)
+        {
+            summaryFile << pair.first << ": " << pair.second << "\n";
+        }
         summaryFile << "Game event reports:\n";
 
-        std::vector<Event> onlyUserEvents; //this is a temp events list which contains olny the specfic user we got as an arguemnts reported
-        for ( Event& event : game.events) {
-            if (event.getUserSender() == user) {
+        std::vector<Event> onlyUserEvents; // this is a temp events list which contains olny the specfic user we got as an arguemnts reported
+        for (Event &event : game.events)
+        {
+            if (event.getUserSender() == user)
+            {
                 onlyUserEvents.push_back(event);
             }
         }
 
         // we order the events by the time they happend
-       std::sort(onlyUserEvents.begin(), onlyUserEvents.end(), compareEventsByTime);
+        std::sort(onlyUserEvents.begin(), onlyUserEvents.end(), compareEventsByTime);
 
-        for (Event& event : onlyUserEvents) { //we print from the already ordered list
+        for (Event &event : onlyUserEvents)
+        { // we print from the already ordered list
             summaryFile << event.get_time() << " - " << event.get_name() << ":\n\n";
-            summaryFile << event.get_discription() << "\n\n\n\n"; //for a big gap between events
+            summaryFile << event.get_discription() << "\n\n\n\n"; // for a big gap between events
         }
         summaryFile.close();
         return multiFrames;
@@ -245,11 +258,11 @@ void StompProtocol::processAnswer(std::string serverResponse)
     std::stringstream socketInput(serverResponse);
     std::string line;
     std::string command;
-    std::getline(socketInput, command); //we read the command from the socket
+    std::getline(socketInput, command); // we read the command from the socket
 
     if (command == "MESSAGE")
     {
-        //varibale preperation to later on be inserted into the AllGamesInfo memory
+        // varibale preperation to later on be inserted into the AllGamesInfo memory
         std::string destination;
         std::string user;
         std::string team_a;
@@ -261,22 +274,22 @@ void StompProtocol::processAnswer(std::string serverResponse)
         std::map<std::string, std::string> a_updates;
         std::map<std::string, std::string> b_updates;
 
-       
-        while (std::getline(socketInput, line) && line != "") //reading the headers of the stomp untill we reach the destination string
+        while (std::getline(socketInput, line) && line != "") // reading the headers of the stomp untill we reach the destination string
         {
             if (line.find("destination:") == 0)
             {
-                destination = line.substr(12); // we cut the string and get the destination value which comes right after 
+                destination = line.substr(12); // we cut the string and get the destination value which comes right after
             }
         }
-        
-        std::string gameName = destination.substr(1); //we cut the '/' from the begining of the game name
+
+        std::string gameName = destination.substr(1); // we cut the '/' from the begining of the game name
         std::cout << "Received a message from channel " << gameName << std::endl;
-        std::string stringPart = ""; //a varaible to remember where are we in the current string
-        while (std::getline(socketInput, line)){
-            //how this works: each time we read a line from the socket. since we know how the report frame looks like, each of the argument we want is in a different line
-            // we go down each line and since we cut the string each time, the string we want needs to start from 0, then we cut the unwamted information like 'user: Lion' ,we need onlu Lion
-            // so we will cut user using substr method.
+        std::string stringPart = ""; // a varaible to remember where are we in the current string
+        while (std::getline(socketInput, line))
+        {
+            // how this works: each time we read a line from the socket. since we know how the report frame looks like, each of the argument we want is in a different line
+            //  we go down each line and since we cut the string each time, the string we want needs to start from 0, then we cut the unwamted information like 'user: Lion' ,we need onlu Lion
+            //  so we will cut user using substr method.
             if (line.find("user:") == 0)
                 user = line.substr(6);
             else if (line.find("team a:") == 0)
@@ -286,8 +299,8 @@ void StompProtocol::processAnswer(std::string serverResponse)
             else if (line.find("event name:") == 0)
                 event_name = line.substr(12);
             else if (line.find("time:") == 0)
-                time = std::stoi(line.substr(6)); //string to integer
-                //from here we decide to which section the information we will get will have to got, like a memory switch
+                time = std::stoi(line.substr(6)); // string to integer
+            // from here we decide to which section the information we will get will have to got, like a memory switch
             else if (line == "general game updates:")
                 stringPart = "general";
             else if (line == "team a updates:")
@@ -302,7 +315,7 @@ void StompProtocol::processAnswer(std::string serverResponse)
                 {
                     description = description + line + "\n";
                 }
-                else if (line.find(":") != std::string::npos) //we check if a ':'exits. npos means no position, (no position = false then enter the if)
+                else if (line.find(":") != std::string::npos) // we check if a ':'exits. npos means no position, (no position = false then enter the if)
                 {
                     int split = line.find(":");
                     std::string key = line.substr(0, split);
@@ -318,27 +331,29 @@ void StompProtocol::processAnswer(std::string serverResponse)
             }
         }
 
-        //if the game does not exits in the memory we create it
+        // if the game does not exits in the memory we create it
         if (AllGamesInfo.find(gameName) == AllGamesInfo.end())
         {
             AllGamesInfo[gameName].team_a = team_a;
             AllGamesInfo[gameName].team_b = team_b;
         }
-        Event event(team_a, team_b, event_name, time, general_updates, a_updates, b_updates, description); //adding the event
+        Event event(team_a, team_b, event_name, time, general_updates, a_updates, b_updates, description); // adding the event
         event.setUserSender(user);
         AllGamesInfo[gameName].events.push_back(event);
-        
-        //update all the current info
-       for (auto &pair : general_updates) {
+
+        // update all the current info
+        for (auto &pair : general_updates)
+        {
             AllGamesInfo[gameName].general_stats[pair.first] = pair.second;
         }
-        for (auto &pair : a_updates) {
+        for (auto &pair : a_updates)
+        {
             AllGamesInfo[gameName].team_a_stats[pair.first] = pair.second;
         }
-        for (auto &pair : b_updates) {
+        for (auto &pair : b_updates)
+        {
             AllGamesInfo[gameName].team_b_stats[pair.first] = pair.second;
         }
-        
     }
 
     else if (command == "CONNECTED")
@@ -347,31 +362,48 @@ void StompProtocol::processAnswer(std::string serverResponse)
     }
     else if (command == "ERROR")
     {
-        std::cout << "Error:\n" << serverResponse << std::endl;
+        std::cout << "Error:\n"
+                  << serverResponse << std::endl;
     }
-    else if (command == "RECEIPT") {
-       std::string receiptIdStr;
-       //searcing for the id string 
-       while (std::getline(socketInput, line) && line != "")
+    else if (command == "RECEIPT")
+    {
+        std::string receiptIdString;
+        while (std::getline(socketInput, line) && line != "")
         {
             if (line.find("receipt-id:") == 0)
             {
-                receiptIdStr = line.substr(11);
+                receiptIdString = line.substr(11);
             }
         }
-        std::cout << "recipet id: " << receiptIdStr << std::endl; 
 
-        if (!receiptIdStr.empty() && std::stoi(receiptIdStr) == logoutReceiptId) //stringn to int + checking it is a logout recipet
+        if (!receiptIdString.empty())
         {
-            //cleaning all the data from the user subsriptions
-            std::cout << "clearing data" << std::endl;
-            activeSubs.clear();
-            numOfSubs = 0;
-            AllGamesInfo.clear();
-            whosent = "";
+            int recieptID = std::stoi(receiptIdString); // the string to command
+            if (receiptActions.count(recieptID))
+            { // we check if this id exits in the id action map
+                std::string action = receiptActions[recieptID];
+
+                if (action.find("joined") == 0)
+                {
+                    std::cout << "Joined channel " << action.substr(7) << std::endl;
+                }
+                else if (action.find("exited") == 0)
+                {
+                    std::cout << "Exited channel " << action.substr(7) << std::endl;
+                }
+                else if (action == "logout")
+                {
+                    std::cout << "Logout receipt received. Loging out" << std::endl;
+                    // clearing all the data
+                    activeSubs.clear();
+                    numOfSubs = 0;
+                    AllGamesInfo.clear();
+                    whosent = "";
+                    terminate=true;
+                }
+                receiptActions.erase(recieptID);
+            }
         }
     }
 }
 
-
-    

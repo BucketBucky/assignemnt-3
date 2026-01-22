@@ -53,12 +53,13 @@ int main(int argc, char *argv[]) {
         //we create the thread which listens to the server socket. the main thread will be listening to the keyboard input
         std::thread mySocketThread([&myHandler, &myProtocol, &connectedToServer]() {
             std::string ans;
-            while (connectedToServer && myHandler.getFrameAscii(ans, '\0')) {
+            while (connectedToServer && !myProtocol.logoutTrue() && myHandler.getFrameAscii(ans, '\0')) {
                 myProtocol.processAnswer(ans); 
                 ans.clear(); //to clear the previous command
             }
             connectedToServer = false;
             std::cout << "disconnected from server" << std::endl;
+            myHandler.close(); //close the socket
         });
         // the main thread (keyboard)
         while (connectedToServer) {
