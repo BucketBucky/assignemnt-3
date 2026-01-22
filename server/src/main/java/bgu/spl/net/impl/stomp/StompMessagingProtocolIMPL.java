@@ -93,38 +93,37 @@ public class StompMessagingProtocolIMPL implements StompMessagingProtocol<String
      * Handler functions for each Frame
      */
     private void h_connect(String lines[]) {
+        String login = get_header(lines, "login");
+        String passcode = get_header(lines, "passcode");
 
-       String login = get_header(lines, "login");
-    String passcode = get_header(lines, "passcode");
+        if (login == null || passcode == null) {
+            send_error("Login or passcode header is missing");
+            return;
+        }
+        //Data base connnection to extrenal momory
+        LoginStatus status = Database.getInstance().login(this.connectionId, login, passcode);
 
-    if (login == null || passcode == null) {
-        send_error("Login or passcode header is missing");
-        return;
-    }
-    //Data base connnection to extrenal momory
-    LoginStatus status = Database.getInstance().login(this.connectionId, login, passcode);
+        //Checks if user is allready logged in
+        if (status == LoginStatus.ALREADY_LOGGED_IN) {
+            send_error("User is already logged in");
+            return;
+        }
+        
+        //Checks if user entered wrong password
+        if (status == LoginStatus.WRONG_PASSWORD) {
+            send_error("Wrong password");
+            return;
+        }
 
-    //Checks if user is allready logged in
-    if (status == LoginStatus.ALREADY_LOGGED_IN) {
-        send_error("User is already logged in");
-        return;
-    }
-    
-    //Checks if user entered wrong password
-    if (status == LoginStatus.WRONG_PASSWORD) {
-        send_error("Wrong password");
-        return;
-    }
+        //Checks if user is allready connected
+        if (status == LoginStatus.CLIENT_ALREADY_CONNECTED) {
+            send_error("This client is already logged in!");
+            return;
+        }
 
-    //Checks if user is allready connected
-    if (status == LoginStatus.CLIENT_ALREADY_CONNECTED) {
-        send_error("This client is already logged in!");
-        return;
-    }
-
-    this.currentUsername = login;
-    String response = "CONNECTED\n" + "version:1.2\n\n";
-    connections.send(this.connectionId, response);
+        this.currentUsername = login;
+        String response = "CONNECTED\n" + "version:1.2\n\n";
+        connections.send(this.connectionId, response);
     }
 
     private void h_send(String lines[], String msg) {

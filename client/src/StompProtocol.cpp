@@ -189,7 +189,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         std::ofstream summaryFile(file, std::ios::trunc);
         if (!summaryFile.is_open())
         {
-            std::cout << "Error: file did not " << file << std::endl;
+            std::cout << "file was not created" << std::endl;
             return multiFrames;
         }
         // now we write all the info statistics into the file we have opend
@@ -197,19 +197,19 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
          summaryFile << "Game stats:\n";
  
          summaryFile << "General stats:\n";
-         for ( auto &pair : game.general_stats)
+         for (auto &pair : game.general_stats)
          {
              summaryFile << pair.first << ": " << pair.second << "\n";
          }
  
          summaryFile << game.team_a << " stats:\n";
-         for ( auto &pair : game.team_a_stats)
+         for (auto &pair : game.team_a_stats)
          {
              summaryFile << pair.first << ": " << pair.second << "\n";
          }
  
          summaryFile << game.team_b << " stats:\n";
-         for ( auto &pair : game.team_b_stats)
+         for (auto &pair : game.team_b_stats)
          {
              summaryFile << pair.first << ": " << pair.second << "\n";
          }
@@ -225,7 +225,7 @@ std::vector<std::string> StompProtocol::process(std::string userLine)
         // we order the events by the time they happend
        std::sort(onlyUserEvents.begin(), onlyUserEvents.end(), compareEventsByTime);
 
-        for (const Event& event : onlyUserEvents) { //we print from the already ordered list
+        for (Event& event : onlyUserEvents) { //we print from the already ordered list
             summaryFile << event.get_time() << " - " << event.get_name() << ":\n\n";
             summaryFile << event.get_discription() << "\n\n\n\n"; //for a big gap between events
         }
@@ -271,6 +271,7 @@ void StompProtocol::processAnswer(std::string serverResponse)
         }
         
         std::string gameName = destination.substr(1); //we cut the '/' from the begining of the game name
+        std::cout << "Received a message from channel " << gameName << std::endl;
         std::string stringPart = ""; //a varaible to remember where are we in the current string
         while (std::getline(socketInput, line)){
             //how this works: each time we read a line from the socket. since we know how the report frame looks like, each of the argument we want is in a different line
@@ -337,6 +338,7 @@ void StompProtocol::processAnswer(std::string serverResponse)
         for (auto &pair : b_updates) {
             AllGamesInfo[gameName].team_b_stats[pair.first] = pair.second;
         }
+        
     }
 
     else if (command == "CONNECTED")

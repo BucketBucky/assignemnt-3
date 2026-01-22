@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         }
         ConnectionHandler myHandler(hostIP, port);
         if (!myHandler.connect()) {
-            std::cerr << "connecting failed" << std::endl;
+            std::cout << "connecting failed" << std::endl;
             continue; 
         }
 
@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
             std::string ans;
             while (connectedToServer && myHandler.getFrameAscii(ans, '\0')) {
                 myProtocol.processAnswer(ans); 
+                ans.clear(); //to clear the previous command
             }
             connectedToServer = false;
             std::cout << "disconnected from server" << std::endl;

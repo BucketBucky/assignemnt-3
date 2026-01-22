@@ -1,7 +1,7 @@
 package bgu.spl.net.impl.stomp;
 
 import java.util.function.Supplier;
-
+import bgu.spl.net.impl.data.Database;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.StompMessagingProtocol; 
 
@@ -27,6 +27,10 @@ public class StompServer {
         Supplier<StompMessagingProtocol<String>> new_SMP = () -> new StompMessagingProtocolIMPL();
         Supplier<MessageEncoderDecoder<String>> new_SED = () -> new StompEncoderDecoder();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Database.getInstance().printReport();     //we got this idea from https://www.quora.com/How-do-I-use-System-exit-in-Java-to-print-a-message-to-the-console-as-well-as-exit-the-system
+        }));                                          // when the server closees in any way, it will print the report function from data base
+
         
 
         if (srv_type.equalsIgnoreCase("tpc")) {
@@ -43,5 +47,7 @@ public class StompServer {
             System.out.println("Unknown server type: " + srv_type + ", please try again with TPC/Reactor");
             System.exit(1);
         }
+        
+        
     }
 }
